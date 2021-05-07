@@ -1,7 +1,6 @@
 from flask import Flask
 from flask import Flask, redirect, url_for, request, render_template,jsonify
 import  tensorflow as tf
-from tensorflow.keras.applications.imagenet_utils import preprocess_input, decode_predictions
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
@@ -13,21 +12,19 @@ import librosa.display
 import matplotlib.pyplot as plt
 from sklearn.ensemble import  RandomForestClassifier
 import  multiprocessing as mp
-
-
-
 import pickle
 app=Flask(__name__)
 MODEL_PATH = r'models\vgg16.h5'
 model_2_path=r"models\rfc.pkl"
 sooraj_model1_path=r"models\soorajmodel.h5"
 sooraj_model2_path=r"models\soorajmodel2.h5"
-# Load  trained model
+# Load  trained models
 model = load_model(MODEL_PATH)
 model_2=pickle.load(open(model_2_path,'rb'))
 sooraj_model1=load_model(sooraj_model1_path)
 sooraj_model2=load_model(sooraj_model2_path)
-print('Models loaded. Check http://127.0.0.1:5000/')
+print('Models loaded.')
+#Takes an audio returns image path.
 def save_spectrogram1(audio_fname):
     y, sr = librosa.load(audio_fname, sr=None)
     S = librosa.feature.melspectrogram(y, sr=sr, n_mels=128)
@@ -41,6 +38,7 @@ def save_spectrogram1(audio_fname):
     image_fname="img"
     fig1.savefig(image_fname, dpi=200)
     return image_fname + ".png"
+# Takes image_path and model and returns prediction 
 def img_pred(img_path, model):
 
   img = image.load_img(img_path, target_size=(224, 224))
@@ -52,15 +50,18 @@ def img_pred(img_path, model):
 
 
   return ans
+# Takes audio_path and model, and returns prediction
 def mod_2(aud_path,model_2):
     X, sample_rate = librosa.load(aud_path, res_type='kaiser_fast',duration=2.5,sr=22050*2,offset=0.5)
     mfccs = np.mean(librosa.feature.mfcc(y=X,sr=sample_rate,n_mfcc=40).T,axis=0)
     pred=model_2.predict(mfccs.reshape(1,-1))[0]
     return pred
+# Takes audio_path and model, and returns prediction
 def mod_1(audio_path,model):
     img_path = save_spectrogram1(audio_path)
     ans = img_pred(img_path, model)
     return ans
+# Takes audio_path and model, and returns prediction
 def soorajmodel1(path, model):
 
     X, sample_rate = librosa.load(path, res_type='kaiser_fast', duration=3, sr=44100, offset=0.5)
@@ -125,6 +126,7 @@ def soorajmodel2(file_path,model2):
 
 
     return prediction_model_2[0]
+#takes the audio_path and model number returns prediction
 def model_predict(audio_path,s):
   d = ["angry", "calm", "happy", "sad"]
   if s==0:
@@ -141,21 +143,22 @@ def model_predict(audio_path,s):
 
 
   return d[ans]
+#if No model is selected.prediction is taken from each model and voting is done
 def ensemble(audio_path):
     vote=[]
     vote.append(mod_1(audio_path,model))
     vote.append(mod_2(audio_path,model_2))
     vote.append(soorajmodel1(audio_path,sooraj_model1))
     vote.append(soorajmodel2(audio_path, sooraj_model2))
-    return max(set(vote), key = vote.count)
+    return max(set(vote), key = vote.count) 
 @app.route("/")
 def home():
     return render_template('index.html')
 @app.route("/predict",methods=["GET","POST"])
 def pred():
     if request.method=="POST":
-        f = request.files['file']
-        s=[int(x) for x in request.form.values()]
+        f = request.files['file']  
+        s=[int(x) for x in request.form.values()] #value from drop down
 
 
         basepath = os.path.dirname(__file__)
