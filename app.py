@@ -18,7 +18,7 @@ import  multiprocessing as mp
 
 import pickle
 app=Flask(__name__)
-MODEL_PATH = r'models\model2.h5'
+MODEL_PATH = r'models\vgg16.h5'
 model_2_path=r"models\rfc.pkl"
 sooraj_model1_path=r"models\soorajmodel.h5"
 sooraj_model2_path=r"models\soorajmodel2.h5"
