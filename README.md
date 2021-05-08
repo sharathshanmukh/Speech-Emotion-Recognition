@@ -6,3 +6,4 @@ Data Used: We got audio datasets with around 2000 audio files which were in the 
 2.	Happy 
 3.	Sad 
 4.	Angry
+And finally deployed on AWS.
